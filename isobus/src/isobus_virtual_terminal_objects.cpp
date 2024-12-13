@@ -1909,16 +1909,6 @@ namespace isobus
 		foregroundColourObjectID = fontAttributeValue;
 	}
 
-	std::uint16_t InputBoolean::get_variable_reference() const
-	{
-		return variableReference;
-	}
-
-	void InputBoolean::set_variable_reference(std::uint16_t numberVariableValue)
-	{
-		variableReference = numberVariableValue;
-	}
-
 	VirtualTerminalObjectType InputString::get_object_type() const
 	{
 		return VirtualTerminalObjectType::InputString;
@@ -2002,116 +1992,50 @@ namespace isobus
 	{
 		bool retVal = false;
 
-		if (attributeID < static_cast<std::uint8_t>(AttributeName::NumberOfAttributes))
+		if (attributeID <= static_cast<std::uint8_t>(TextualVTObject::AttributeName::FontAttributes))
 		{
-			switch (static_cast<AttributeName>(attributeID))
-			{
-				case AttributeName::Width:
-				{
-					set_width(static_cast<std::uint16_t>(rawAttributeData));
-					retVal = true;
-				}
-				break;
-
-				case AttributeName::Height:
-				{
-					set_height(static_cast<std::uint16_t>(rawAttributeData));
-					retVal = true;
-				}
-				break;
-
-				case AttributeName::BackgroundColour:
-				{
-					set_background_color(static_cast<std::uint8_t>(rawAttributeData));
-					retVal = true;
-				}
-				break;
-
-				case AttributeName::FontAttributes:
-				{
-					auto fontAttributesObject = get_object_by_id(static_cast<std::uint16_t>(rawAttributeData), objectPool);
-
-					if ((NULL_OBJECT_ID == rawAttributeData) ||
-					    ((nullptr != fontAttributesObject) &&
-					     (VirtualTerminalObjectType::FontAttributes == fontAttributesObject->get_object_type())))
-					{
-						set_font_attributes(static_cast<std::uint16_t>(rawAttributeData));
-						retVal = true;
-					}
-					else
-					{
-						returnedError = AttributeError::InvalidValue;
-					}
-				}
-				break;
-
-				case AttributeName::InputAttributes:
-				{
-					auto inputAttributesObject = get_object_by_id(static_cast<std::uint16_t>(rawAttributeData), objectPool);
-
-					if ((NULL_OBJECT_ID == rawAttributeData) ||
-					    ((nullptr != inputAttributesObject) &&
-					     (VirtualTerminalObjectType::InputAttributes == inputAttributesObject->get_object_type())))
-					{
-						set_input_attributes(static_cast<std::uint16_t>(rawAttributeData));
-						retVal = true;
-					}
-					else
-					{
-						returnedError = AttributeError::InvalidValue;
-					}
-				}
-				break;
-
-				case AttributeName::Options:
-				{
-					set_options(static_cast<std::uint8_t>(rawAttributeData));
-					retVal = true;
-				}
-				break;
-
-				case AttributeName::VariableReference:
-				{
-					auto variableReferenceObject = get_object_by_id(static_cast<std::uint16_t>(rawAttributeData), objectPool);
-
-					if ((NULL_OBJECT_ID == rawAttributeData) ||
-					    ((nullptr != variableReferenceObject) &&
-					     (VirtualTerminalObjectType::StringVariable == variableReferenceObject->get_object_type())))
-					{
-						set_variable_reference(static_cast<std::uint16_t>(rawAttributeData));
-						retVal = true;
-					}
-					else
-					{
-						returnedError = AttributeError::InvalidValue;
-					}
-				}
-				break;
-
-				case AttributeName::Justification:
-				{
-					set_justification_bitfield(static_cast<std::uint8_t>(rawAttributeData));
-					retVal = true;
-				}
-				break;
-
-				case AttributeName::Enabled:
-				{
-					set_enabled(0 != rawAttributeData);
-					retVal = true;
-				}
-				break;
-
-				default:
-				{
-					returnedError = AttributeError::InvalidAttributeID;
-				}
-				break;
-			}
+			return TextualVTObject::set_attribute(attributeID, rawAttributeData, objectPool, returnedError);
 		}
-		else
+
+		switch (static_cast<AttributeName>(attributeID))
 		{
-			returnedError = AttributeError::InvalidAttributeID;
+			case AttributeName::InputAttributes:
+			{
+				auto inputAttributesObject = get_object_by_id(static_cast<std::uint16_t>(rawAttributeData), objectPool);
+
+				if ((NULL_OBJECT_ID == rawAttributeData) ||
+				    ((nullptr != inputAttributesObject) &&
+				     (VirtualTerminalObjectType::InputAttributes == inputAttributesObject->get_object_type())))
+				{
+					set_input_attributes(static_cast<std::uint16_t>(rawAttributeData));
+					retVal = true;
+				}
+				else
+				{
+					returnedError = AttributeError::InvalidValue;
+				}
+			}
+			break;
+
+			case AttributeName::Justification:
+			{
+				set_justification_bitfield(static_cast<std::uint8_t>(rawAttributeData));
+				retVal = true;
+			}
+			break;
+
+			case AttributeName::Enabled:
+			{
+				set_enabled(0 != rawAttributeData);
+				retVal = true;
+			}
+			break;
+
+			default:
+			{
+				returnedError = AttributeError::InvalidAttributeID;
+			}
+			break;
 		}
 		return retVal;
 	}
@@ -2120,45 +2044,15 @@ namespace isobus
 	{
 		bool retVal = false;
 
+		if (attributeID <= static_cast<std::uint8_t>(TextualVTObject::AttributeName::FontAttributes))
+		{
+			return TextualVTObject::get_attribute(attributeID, returnedAttributeData);
+		}
+
 		if (attributeID < static_cast<std::uint8_t>(AttributeName::NumberOfAttributes))
 		{
 			switch (attributeID)
 			{
-				case static_cast<std::uint8_t>(AttributeName::Type):
-				{
-					returnedAttributeData = static_cast<std::uint8_t>(get_object_type());
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::Width):
-				{
-					returnedAttributeData = get_width();
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::Height):
-				{
-					returnedAttributeData = get_height();
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::BackgroundColour):
-				{
-					returnedAttributeData = get_background_color();
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::FontAttributes):
-				{
-					returnedAttributeData = get_font_attributes();
-					retVal = true;
-				}
-				break;
-
 				case static_cast<std::uint8_t>(AttributeName::InputAttributes):
 				{
 					returnedAttributeData = get_input_attributes();
@@ -2168,7 +2062,7 @@ namespace isobus
 
 				case static_cast<std::uint8_t>(AttributeName::Options):
 				{
-					returnedAttributeData = optionsBitfield;
+					returnedAttributeData = options;
 					retVal = true;
 				}
 				break;
@@ -2214,39 +2108,17 @@ namespace isobus
 		enabled = value;
 	}
 
-	bool InputString::get_option(Options option) const
-	{
-		return (0 != ((1 << static_cast<std::uint8_t>(option)) & optionsBitfield));
-	}
-
-	void InputString::set_options(std::uint8_t value)
-	{
-		optionsBitfield = value;
-	}
-
-	void InputString::set_option(Options option, bool value)
-	{
-		if (value)
-		{
-			optionsBitfield |= (1 << static_cast<std::uint8_t>(option));
-		}
-		else
-		{
-			optionsBitfield &= ~(1 << static_cast<std::uint8_t>(option));
-		}
-	}
-
-	InputString::HorizontalJustification InputString::get_horizontal_justification() const
+	TextualVTObject::HorizontalJustification TextualVTObject::get_horizontal_justification() const
 	{
 		return static_cast<HorizontalJustification>(justificationBitfield & 0x03);
 	}
 
-	InputString::VerticalJustification InputString::get_vertical_justification() const
+	TextualVTObject::VerticalJustification TextualVTObject::get_vertical_justification() const
 	{
 		return static_cast<VerticalJustification>((justificationBitfield >> 2) & 0x03);
 	}
 
-	void InputString::set_justification_bitfield(std::uint8_t value)
+	void TextualVTObject::set_justification_bitfield(std::uint8_t value)
 	{
 		justificationBitfield = value;
 	}
@@ -2261,24 +2133,14 @@ namespace isobus
 		stringValue = value;
 	}
 
-	std::uint16_t InputString::get_font_attributes() const
+	std::uint16_t TextualVTObject::get_font_attributes() const
 	{
 		return fontAttributes;
 	}
 
-	void InputString::set_font_attributes(std::uint16_t fontAttributesValue)
+	void TextualVTObject::set_font_attributes(std::uint16_t fontAttributesValue)
 	{
 		fontAttributes = fontAttributesValue;
-	}
-
-	std::uint16_t InputString::get_variable_reference() const
-	{
-		return variableReference;
-	}
-
-	void InputString::set_variable_reference(std::uint16_t variableReferenceValue)
-	{
-		variableReference = variableReferenceValue;
 	}
 
 	std::uint16_t InputString::get_input_attributes() const
@@ -2359,74 +2221,15 @@ namespace isobus
 	{
 		bool retVal = false;
 
+		if (attributeID <= static_cast<std::uint8_t>(NumericVTobject::AttributeName::VariableReference))
+		{
+			return NumericVTobject::set_attribute(attributeID, rawAttributeData, objectPool, returnedError);
+		}
+
 		if (attributeID < static_cast<std::uint8_t>(AttributeName::NumberOfAttributes))
 		{
 			switch (static_cast<AttributeName>(attributeID))
 			{
-				case AttributeName::Width:
-				{
-					set_width(static_cast<std::uint16_t>(rawAttributeData));
-					retVal = true;
-				}
-				break;
-
-				case AttributeName::Height:
-				{
-					set_height(static_cast<std::uint16_t>(rawAttributeData));
-					retVal = true;
-				}
-				break;
-
-				case AttributeName::BackgroundColour:
-				{
-					set_background_color(static_cast<std::uint8_t>(rawAttributeData));
-					retVal = true;
-				}
-				break;
-
-				case AttributeName::FontAttributes:
-				{
-					auto fontAttributesObject = get_object_by_id(static_cast<std::uint16_t>(rawAttributeData), objectPool);
-
-					if ((NULL_OBJECT_ID == rawAttributeData) ||
-					    ((nullptr != fontAttributesObject) &&
-					     (VirtualTerminalObjectType::FontAttributes == fontAttributesObject->get_object_type())))
-					{
-						set_font_attributes(static_cast<std::uint16_t>(rawAttributeData));
-						retVal = true;
-					}
-					else
-					{
-						returnedError = AttributeError::InvalidValue;
-					}
-				}
-				break;
-
-				case AttributeName::Options:
-				{
-					set_options(static_cast<std::uint8_t>(rawAttributeData));
-					retVal = true;
-				}
-				break;
-
-				case AttributeName::VariableReference:
-				{
-					auto variableObject = get_object_by_id(static_cast<std::uint16_t>(rawAttributeData), objectPool);
-
-					if ((NULL_OBJECT_ID == rawAttributeData) ||
-					    ((nullptr != variableObject) &&
-					     (VirtualTerminalObjectType::NumberVariable == variableObject->get_object_type())))
-					{
-						set_variable_reference(static_cast<std::uint16_t>(rawAttributeData));
-						retVal = true;
-					}
-					else
-					{
-						returnedError = AttributeError::InvalidValue;
-					}
-				}
-				break;
-
 				case AttributeName::MinValue:
 				{
 					set_minimum_value(rawAttributeData);
@@ -2496,157 +2299,272 @@ namespace isobus
 	{
 		bool retVal = false;
 
-		if (attributeID < static_cast<std::uint8_t>(AttributeName::NumberOfAttributes))
+		if (attributeID <= static_cast<std::uint8_t>(NumericVTobject::AttributeName::VariableReference))
 		{
-			switch (attributeID)
+			return NumericVTobject::get_attribute(attributeID, returnedAttributeData);
+		}
+
+		switch (attributeID)
+		{
+			case static_cast<std::uint8_t>(AttributeName::MinValue):
 			{
-				case static_cast<std::uint8_t>(AttributeName::Type):
-				{
-					returnedAttributeData = static_cast<std::uint8_t>(get_object_type());
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::Width):
-				{
-					returnedAttributeData = get_width();
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::Height):
-				{
-					returnedAttributeData = get_height();
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::BackgroundColour):
-				{
-					returnedAttributeData = get_background_color();
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::FontAttributes):
-				{
-					returnedAttributeData = get_font_attributes();
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::Options):
-				{
-					returnedAttributeData = options;
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::VariableReference):
-				{
-					returnedAttributeData = get_variable_reference();
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::MinValue):
-				{
-					returnedAttributeData = get_minimum_value();
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::MaxValue):
-				{
-					returnedAttributeData = get_maximum_value();
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::Offset):
-				{
-					auto temp = reinterpret_cast<const std::uint32_t *>(&offset);
-					returnedAttributeData = *temp;
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::Scale):
-				{
-					auto temp = reinterpret_cast<const std::uint32_t *>(&scale);
-					returnedAttributeData = *temp;
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::NumberOfDecimals):
-				{
-					returnedAttributeData = get_number_of_decimals();
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::Format):
-				{
-					returnedAttributeData = get_format();
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::Justification):
-				{
-					returnedAttributeData = justificationBitfield;
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::Value):
-				{
-					returnedAttributeData = value;
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::Options2):
-				{
-					returnedAttributeData = options2;
-					retVal = true;
-				}
-				break;
-
-				default:
-				{
-					// Do nothing, return false
-				}
-				break;
+				returnedAttributeData = get_minimum_value();
+				retVal = true;
 			}
+			break;
+
+			case static_cast<std::uint8_t>(AttributeName::MaxValue):
+			{
+				returnedAttributeData = get_maximum_value();
+				retVal = true;
+			}
+			break;
+
+			case static_cast<std::uint8_t>(AttributeName::Offset):
+			{
+				auto temp = reinterpret_cast<const std::uint32_t *>(&offset);
+				returnedAttributeData = *temp;
+				retVal = true;
+			}
+			break;
+
+			case static_cast<std::uint8_t>(AttributeName::Scale):
+			{
+				auto temp = reinterpret_cast<const std::uint32_t *>(&scale);
+				returnedAttributeData = *temp;
+				retVal = true;
+			}
+			break;
+
+			case static_cast<std::uint8_t>(AttributeName::NumberOfDecimals):
+			{
+				returnedAttributeData = get_number_of_decimals();
+				retVal = true;
+			}
+			break;
+
+			case static_cast<std::uint8_t>(AttributeName::Format):
+			{
+				returnedAttributeData = get_format();
+				retVal = true;
+			}
+			break;
+
+			case static_cast<std::uint8_t>(AttributeName::Justification):
+			{
+				returnedAttributeData = justificationBitfield;
+				retVal = true;
+			}
+			break;
+
+			case static_cast<std::uint8_t>(AttributeName::Value):
+			{
+				returnedAttributeData = value;
+				retVal = true;
+			}
+			break;
+
+			case static_cast<std::uint8_t>(AttributeName::Options2):
+			{
+				returnedAttributeData = options2;
+				retVal = true;
+			}
+			break;
+
+			default:
+			{
+				// Do nothing, return false
+			}
+			break;
 		}
 		return retVal;
 	}
 
-	InputNumber::HorizontalJustification InputNumber::get_horizontal_justification() const
-	{
-		return static_cast<HorizontalJustification>(justificationBitfield & 0x03);
-	}
-
-	InputNumber::VerticalJustification InputNumber::get_vertical_justification() const
-	{
-		return static_cast<VerticalJustification>((justificationBitfield >> 2) & 0x03);
-	}
-
-	void InputNumber::set_justification_bitfield(std::uint8_t newJustification)
-	{
-		justificationBitfield = newJustification;
-	}
-
-	float InputNumber::get_scale() const
+	float NumericVTobject::get_scale() const
 	{
 		return scale;
 	}
 
-	void InputNumber::set_scale(float newScale)
+	void NumericVTobject::set_scale(float newScale)
 	{
 		scale = newScale;
+	}
+
+	std::uint32_t NumericVTobject::get_value() const
+	{
+		return value;
+	}
+
+	void NumericVTobject::set_value(std::uint32_t inputValue)
+	{
+		value = inputValue;
+	}
+
+	bool NumericVTobject::set_attribute(
+	  uint8_t attributeID,
+	  uint32_t rawAttributeData,
+	  const std::map<uint16_t, std::shared_ptr<VTObject>> &objectPool,
+	  AttributeError &returnedError)
+	{
+		bool retVal = false;
+
+		if (attributeID <= static_cast<std::uint8_t>(TextualVTObject::AttributeName::FontAttributes))
+		{
+			return TextualVTObject::set_attribute(attributeID, rawAttributeData, objectPool, returnedError);
+		}
+
+		switch (static_cast<AttributeName>(attributeID))
+		{
+			case NumericVTobject::AttributeName::Options:
+			{
+				set_options(static_cast<std::uint8_t>(rawAttributeData));
+				retVal = true;
+			}
+			break;
+
+			case NumericVTobject::AttributeName::VariableReference:
+			{
+				auto variableObject = get_object_by_id(static_cast<std::uint16_t>(rawAttributeData), objectPool);
+
+				if ((NULL_OBJECT_ID == rawAttributeData) ||
+				    ((nullptr != variableObject) &&
+				     (VirtualTerminalObjectType::NumberVariable == variableObject->get_object_type())))
+				{
+					set_variable_reference(static_cast<std::uint16_t>(rawAttributeData));
+					retVal = true;
+				}
+				else
+				{
+					returnedError = AttributeError::InvalidValue;
+				}
+			}
+			break;
+		}
+		return retVal;
+	}
+
+	bool NumericVTobject::get_attribute(uint8_t attributeID, uint32_t &returnedAttributeData) const
+	{
+		bool retVal = false;
+
+		if (attributeID <= static_cast<std::uint8_t>(NumericVTobject::AttributeName::VariableReference))
+		{
+			return NumericVTobject::get_attribute(attributeID, returnedAttributeData);
+		}
+
+		switch (attributeID)
+		{
+			case static_cast<std::uint8_t>(AttributeName::Options):
+			{
+				returnedAttributeData = options;
+				retVal = true;
+			}
+			break;
+
+			case static_cast<std::uint8_t>(AttributeName::VariableReference):
+			{
+				returnedAttributeData = get_variable_reference();
+				retVal = true;
+			}
+			break;
+		}
+		return retVal;
+	}
+
+	bool TextualVTObject::set_attribute(
+	  uint8_t attributeID,
+	  uint32_t rawAttributeData,
+	  const std::map<uint16_t, std::shared_ptr<VTObject>> &objectPool,
+	  AttributeError &returnedError)
+	{
+		bool retVal = false;
+
+		switch (static_cast<AttributeName>(attributeID))
+		{
+			case TextualVTObject::AttributeName::Width:
+			{
+				set_width(static_cast<std::uint16_t>(rawAttributeData));
+				retVal = true;
+			}
+			break;
+
+			case TextualVTObject::AttributeName::Height:
+			{
+				set_height(static_cast<std::uint16_t>(rawAttributeData));
+				retVal = true;
+			}
+			break;
+
+			case TextualVTObject::AttributeName::BackgroundColour:
+			{
+				set_background_color(static_cast<std::uint8_t>(rawAttributeData));
+				retVal = true;
+			}
+			break;
+
+			case TextualVTObject::AttributeName::FontAttributes:
+			{
+				auto fontAttributesObject = get_object_by_id(static_cast<std::uint16_t>(rawAttributeData), objectPool);
+
+				if ((NULL_OBJECT_ID == rawAttributeData) ||
+				    ((nullptr != fontAttributesObject) &&
+				     (VirtualTerminalObjectType::FontAttributes == fontAttributesObject->get_object_type())))
+				{
+					set_font_attributes(static_cast<std::uint16_t>(rawAttributeData));
+					retVal = true;
+				}
+				else
+				{
+					returnedError = AttributeError::InvalidValue;
+				}
+			}
+			break;
+		}
+		return retVal;
+	}
+
+	bool TextualVTObject::get_attribute(uint8_t attributeID, uint32_t &returnedAttributeData) const
+	{
+		bool retVal = false;
+
+		switch (attributeID)
+		{
+			case static_cast<std::uint8_t>(AttributeName::Type):
+			{
+				returnedAttributeData = static_cast<std::uint8_t>(get_object_type());
+				retVal = true;
+			}
+			break;
+
+			case static_cast<std::uint8_t>(AttributeName::Width):
+			{
+				returnedAttributeData = get_width();
+				retVal = true;
+			}
+			break;
+
+			case static_cast<std::uint8_t>(AttributeName::Height):
+			{
+				returnedAttributeData = get_height();
+				retVal = true;
+			}
+			break;
+
+			case static_cast<std::uint8_t>(AttributeName::BackgroundColour):
+			{
+				returnedAttributeData = get_background_color();
+				retVal = true;
+			}
+			break;
+
+			case static_cast<std::uint8_t>(AttributeName::FontAttributes):
+			{
+				returnedAttributeData = get_font_attributes();
+				retVal = true;
+			}
+			break;
+		}
+		return retVal;
 	}
 
 	std::uint32_t InputNumber::get_maximum_value() const
@@ -2669,47 +2587,47 @@ namespace isobus
 		minimumValue = newMin;
 	}
 
-	std::int32_t InputNumber::get_offset() const
+	std::int32_t NumericVTobject::get_offset() const
 	{
 		return offset;
 	}
 
-	void InputNumber::set_offset(std::int32_t newOffset)
+	void NumericVTobject::set_offset(std::int32_t newOffset)
 	{
 		offset = newOffset;
 	}
 
-	std::uint8_t InputNumber::get_number_of_decimals() const
+	std::uint8_t NumericVTobject::get_number_of_decimals() const
 	{
 		return numberOfDecimals;
 	}
 
-	void InputNumber::set_number_of_decimals(std::uint8_t numDecimals)
+	void NumericVTobject::set_number_of_decimals(std::uint8_t numDecimals)
 	{
 		numberOfDecimals = numDecimals;
 	}
 
-	bool InputNumber::get_format() const
+	bool NumericVTobject::get_format() const
 	{
 		return format;
 	}
 
-	void InputNumber::set_format(bool newFormat)
+	void NumericVTobject::set_format(bool newFormat)
 	{
 		format = newFormat;
 	}
 
-	bool InputNumber::get_option(Options newOption) const
+	bool TextualVTObject::get_option(Options newOption) const
 	{
 		return (0 != ((1 << static_cast<std::uint8_t>(newOption)) & options));
 	}
 
-	void InputNumber::set_options(std::uint8_t newOptions)
+	void TextualVTObject::set_options(std::uint8_t newOptions)
 	{
 		options = newOptions;
 	}
 
-	void InputNumber::set_option(Options option, bool optionValue)
+	void TextualVTObject::set_option(Options option, bool optionValue)
 	{
 		if (optionValue)
 		{
@@ -2741,36 +2659,6 @@ namespace isobus
 		{
 			options2 &= ~(1 << static_cast<std::uint8_t>(option));
 		}
-	}
-
-	std::uint32_t InputNumber::get_value() const
-	{
-		return value;
-	}
-
-	void InputNumber::set_value(std::uint32_t inputValue)
-	{
-		value = inputValue;
-	}
-
-	std::uint16_t InputNumber::get_font_attributes() const
-	{
-		return fontAttributes;
-	}
-
-	void InputNumber::set_font_attributes(std::uint16_t fontAttributesValue)
-	{
-		fontAttributes = fontAttributesValue;
-	}
-
-	std::uint16_t InputNumber::get_variable_reference() const
-	{
-		return variableReference;
-	}
-
-	void InputNumber::set_variable_reference(std::uint16_t variableReferenceValue)
-	{
-		variableReference = variableReferenceValue;
 	}
 
 	VirtualTerminalObjectType InputList::get_object_type() const
@@ -3039,16 +2927,6 @@ namespace isobus
 		return retVal;
 	}
 
-	void InputList::set_variable_reference(std::uint16_t referencedObjectID)
-	{
-		variableReference = referencedObjectID;
-	}
-
-	std::uint16_t InputList::get_variable_reference() const
-	{
-		return variableReference;
-	}
-
 	std::uint8_t InputList::get_number_of_list_items() const
 	{
 		return numberOfListItems;
@@ -3127,92 +3005,27 @@ namespace isobus
 	{
 		bool retVal = false;
 
-		if (attributeID < static_cast<std::uint8_t>(AttributeName::NumberOfAttributes))
+		if (attributeID <= static_cast<std::uint8_t>(TextualVTObject::AttributeName::FontAttributes))
 		{
-			switch (static_cast<AttributeName>(attributeID))
+			return TextualVTObject::set_attribute(attributeID, rawAttributeData, objectPool, returnedError);
+		}
+
+		switch (static_cast<AttributeName>(attributeID))
+		{
+			case AttributeName::Justification:
 			{
-				case AttributeName::Width:
-				{
-					set_width(static_cast<std::uint16_t>(rawAttributeData));
-					retVal = true;
-				}
-				break;
-
-				case AttributeName::Height:
-				{
-					set_height(static_cast<std::uint16_t>(rawAttributeData));
-					retVal = true;
-				}
-				break;
-
-				case AttributeName::BackgroundColour:
-				{
-					set_background_color(static_cast<std::uint8_t>(rawAttributeData));
-					retVal = true;
-				}
-				break;
-
-				case AttributeName::FontAttributes:
-				{
-					auto fontAttributesObject = get_object_by_id(static_cast<std::uint16_t>(rawAttributeData), objectPool);
-
-					if ((NULL_OBJECT_ID == rawAttributeData) ||
-					    ((nullptr != fontAttributesObject) &&
-					     (VirtualTerminalObjectType::FontAttributes == fontAttributesObject->get_object_type())))
-					{
-						set_font_attributes(static_cast<std::uint16_t>(rawAttributeData));
-						retVal = true;
-					}
-					else
-					{
-						returnedError = AttributeError::InvalidValue;
-					}
-				}
-				break;
-
-				case AttributeName::Options:
-				{
-					set_options(static_cast<std::uint8_t>(rawAttributeData));
-					retVal = true;
-				}
-				break;
-
-				case AttributeName::VariableReference:
-				{
-					auto variableObject = get_object_by_id(static_cast<std::uint16_t>(rawAttributeData), objectPool);
-
-					if ((NULL_OBJECT_ID == rawAttributeData) ||
-					    ((nullptr != variableObject) &&
-					     (VirtualTerminalObjectType::StringVariable == variableObject->get_object_type())))
-					{
-						set_variable_reference(static_cast<std::uint16_t>(rawAttributeData));
-						retVal = true;
-					}
-					else
-					{
-						returnedError = AttributeError::InvalidValue;
-					}
-				}
-				break;
-
-				case AttributeName::Justification:
-				{
-					set_justification_bitfield(static_cast<std::uint8_t>(rawAttributeData));
-					retVal = true;
-				}
-				break;
-
-				default:
-				{
-					returnedError = AttributeError::InvalidAttributeID;
-				}
-				break;
+				set_justification_bitfield(static_cast<std::uint8_t>(rawAttributeData));
+				retVal = true;
 			}
+			break;
+
+			default:
+			{
+				returnedError = AttributeError::InvalidAttributeID;
+			}
+			break;
 		}
-		else
-		{
-			returnedError = AttributeError::InvalidAttributeID;
-		}
+
 		return retVal;
 	}
 
@@ -3220,111 +3033,41 @@ namespace isobus
 	{
 		bool retVal = false;
 
-		if (attributeID < static_cast<std::uint8_t>(AttributeName::NumberOfAttributes))
+		if (attributeID <= static_cast<std::uint8_t>(TextualVTObject::AttributeName::FontAttributes))
 		{
-			switch (attributeID)
+			return TextualVTObject::get_attribute(attributeID, returnedAttributeData);
+		}
+
+		switch (attributeID)
+		{
+			case static_cast<std::uint8_t>(AttributeName::Options):
 			{
-				case static_cast<std::uint8_t>(AttributeName::Type):
-				{
-					returnedAttributeData = static_cast<std::uint8_t>(get_object_type());
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::Width):
-				{
-					returnedAttributeData = get_width();
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::Height):
-				{
-					returnedAttributeData = get_height();
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::BackgroundColour):
-				{
-					returnedAttributeData = get_background_color();
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::FontAttributes):
-				{
-					returnedAttributeData = get_font_attributes();
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::Options):
-				{
-					returnedAttributeData = optionsBitfield;
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::VariableReference):
-				{
-					returnedAttributeData = get_variable_reference();
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::Justification):
-				{
-					returnedAttributeData = justificationBitfield;
-					retVal = true;
-				}
-				break;
-
-				default:
-				{
-					// Do nothing, return false
-				}
-				break;
+				returnedAttributeData = options;
+				retVal = true;
 			}
+			break;
+
+			case static_cast<std::uint8_t>(AttributeName::VariableReference):
+			{
+				returnedAttributeData = get_variable_reference();
+				retVal = true;
+			}
+			break;
+
+			case static_cast<std::uint8_t>(AttributeName::Justification):
+			{
+				returnedAttributeData = justificationBitfield;
+				retVal = true;
+			}
+			break;
+
+			default:
+			{
+				// Do nothing, return false
+			}
+			break;
 		}
 		return retVal;
-	}
-
-	bool OutputString::get_option(Options option) const
-	{
-		return (0 != (optionsBitfield & (1 << static_cast<std::uint8_t>(option))));
-	}
-
-	void OutputString::set_options(std::uint8_t value)
-	{
-		optionsBitfield = value;
-	}
-
-	void OutputString::set_option(Options option, bool value)
-	{
-		if (value)
-		{
-			optionsBitfield |= (1 << static_cast<std::uint8_t>(option));
-		}
-		else
-		{
-			optionsBitfield &= ~(1 << static_cast<std::uint8_t>(option));
-		}
-	}
-
-	OutputString::HorizontalJustification OutputString::get_horizontal_justification() const
-	{
-		return static_cast<HorizontalJustification>(justificationBitfield & 0x03);
-	}
-
-	OutputString::VerticalJustification OutputString::get_vertical_justification() const
-	{
-		return static_cast<VerticalJustification>((justificationBitfield >> 2) & 0x03);
-	}
-
-	void OutputString::set_justification_bitfield(std::uint8_t value)
-	{
-		justificationBitfield = value;
 	}
 
 	std::string OutputString::get_value() const
@@ -3349,26 +3092,6 @@ namespace isobus
 	void OutputString::set_value(const std::string &value)
 	{
 		stringValue = value;
-	}
-
-	std::uint16_t OutputString::get_font_attributes() const
-	{
-		return fontAttributes;
-	}
-
-	void OutputString::set_font_attributes(std::uint16_t fontAttributesValue)
-	{
-		fontAttributes = fontAttributesValue;
-	}
-
-	std::uint16_t OutputString::get_variable_reference() const
-	{
-		return variableReference;
-	}
-
-	void OutputString::set_variable_reference(std::uint16_t variableReferenceValue)
-	{
-		variableReference = variableReferenceValue;
 	}
 
 	VirtualTerminalObjectType OutputNumber::get_object_type() const
@@ -3439,122 +3162,57 @@ namespace isobus
 	{
 		bool retVal = false;
 
-		if (attributeID < static_cast<std::uint8_t>(AttributeName::NumberOfAttributes))
+		if (attributeID <= static_cast<std::uint8_t>(NumericVTobject::AttributeName::VariableReference))
 		{
-			switch (static_cast<AttributeName>(attributeID))
+			return NumericVTobject::set_attribute(attributeID, rawAttributeData, objectPool, returnedError);
+		}
+
+		switch (static_cast<AttributeName>(attributeID))
+		{
+			case AttributeName::Offset:
 			{
-				case AttributeName::Width:
-				{
-					set_width(static_cast<std::uint16_t>(rawAttributeData));
-					retVal = true;
-				}
-				break;
-
-				case AttributeName::Height:
-				{
-					set_height(static_cast<std::uint16_t>(rawAttributeData));
-					retVal = true;
-				}
-				break;
-
-				case AttributeName::BackgroundColour:
-				{
-					set_background_color(static_cast<std::uint8_t>(rawAttributeData));
-					retVal = true;
-				}
-				break;
-
-				case AttributeName::FontAttributes:
-				{
-					auto fontAttributesObject = get_object_by_id(static_cast<std::uint16_t>(rawAttributeData), objectPool);
-
-					if ((NULL_OBJECT_ID == rawAttributeData) ||
-					    ((nullptr != fontAttributesObject) &&
-					     (VirtualTerminalObjectType::FontAttributes == fontAttributesObject->get_object_type())))
-					{
-						set_font_attributes(static_cast<std::uint16_t>(rawAttributeData));
-						retVal = true;
-					}
-					else
-					{
-						returnedError = AttributeError::InvalidValue;
-					}
-				}
-				break;
-
-				case AttributeName::Options:
-				{
-					set_options(static_cast<std::uint8_t>(rawAttributeData));
-					retVal = true;
-				}
-				break;
-
-				case AttributeName::VariableReference:
-				{
-					auto variableObject = get_object_by_id(static_cast<std::uint16_t>(rawAttributeData), objectPool);
-
-					if ((NULL_OBJECT_ID == rawAttributeData) ||
-					    ((nullptr != variableObject) &&
-					     (VirtualTerminalObjectType::NumberVariable == variableObject->get_object_type())))
-					{
-						set_variable_reference(static_cast<std::uint16_t>(rawAttributeData));
-						retVal = true;
-					}
-					else
-					{
-						returnedError = AttributeError::InvalidValue;
-					}
-				}
-				break;
-
-				case AttributeName::Offset:
-				{
-					auto temp = reinterpret_cast<std::int32_t *>(&rawAttributeData);
-					set_offset(*temp);
-					retVal = true;
-				}
-				break;
-
-				case AttributeName::Scale:
-				{
-					auto temp = reinterpret_cast<float *>(&rawAttributeData);
-					set_scale(*temp);
-					retVal = true;
-				}
-				break;
-
-				case AttributeName::NumberOfDecimals:
-				{
-					set_number_of_decimals(static_cast<std::uint8_t>(rawAttributeData));
-					retVal = true;
-				}
-				break;
-
-				case AttributeName::Format:
-				{
-					set_format(0 != rawAttributeData);
-					retVal = true;
-				}
-				break;
-
-				case AttributeName::Justification:
-				{
-					set_justification_bitfield(static_cast<std::uint8_t>(rawAttributeData));
-					retVal = true;
-				}
-				break;
-
-				default:
-				{
-					returnedError = AttributeError::InvalidAttributeID;
-				}
-				break;
+				auto temp = reinterpret_cast<std::int32_t *>(&rawAttributeData);
+				set_offset(*temp);
+				retVal = true;
 			}
+			break;
+
+			case AttributeName::Scale:
+			{
+				auto temp = reinterpret_cast<float *>(&rawAttributeData);
+				set_scale(*temp);
+				retVal = true;
+			}
+			break;
+
+			case AttributeName::NumberOfDecimals:
+			{
+				set_number_of_decimals(static_cast<std::uint8_t>(rawAttributeData));
+				retVal = true;
+			}
+			break;
+
+			case AttributeName::Format:
+			{
+				set_format(0 != rawAttributeData);
+				retVal = true;
+			}
+			break;
+
+			case AttributeName::Justification:
+			{
+				set_justification_bitfield(static_cast<std::uint8_t>(rawAttributeData));
+				retVal = true;
+			}
+			break;
+
+			default:
+			{
+				returnedError = AttributeError::InvalidAttributeID;
+			}
+			break;
 		}
-		else
-		{
-			returnedError = AttributeError::InvalidAttributeID;
-		}
+
 		return retVal;
 	}
 
@@ -3562,211 +3220,58 @@ namespace isobus
 	{
 		bool retVal = false;
 
-		if (attributeID < static_cast<std::uint8_t>(AttributeName::NumberOfAttributes))
+		if (attributeID <= static_cast<std::uint8_t>(NumericVTobject::AttributeName::VariableReference))
 		{
-			switch (attributeID)
+			return NumericVTobject::get_attribute(attributeID, returnedAttributeData);
+		}
+
+		switch (attributeID)
+		{
+			case static_cast<std::uint8_t>(AttributeName::Offset):
 			{
-				case static_cast<std::uint8_t>(AttributeName::Type):
-				{
-					returnedAttributeData = static_cast<std::uint8_t>(get_object_type());
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::Width):
-				{
-					returnedAttributeData = get_width();
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::Height):
-				{
-					returnedAttributeData = get_height();
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::BackgroundColour):
-				{
-					returnedAttributeData = get_background_color();
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::FontAttributes):
-				{
-					returnedAttributeData = get_font_attributes();
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::Options):
-				{
-					returnedAttributeData = optionsBitfield;
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::VariableReference):
-				{
-					returnedAttributeData = get_variable_reference();
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::Offset):
-				{
-					auto temp = reinterpret_cast<const std::uint32_t *>(&offset);
-					returnedAttributeData = *temp;
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::Scale):
-				{
-					auto temp = reinterpret_cast<const std::uint32_t *>(&scale);
-					returnedAttributeData = *temp;
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::NumberOfDecimals):
-				{
-					returnedAttributeData = get_number_of_decimals();
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::Format):
-				{
-					returnedAttributeData = get_format();
-					retVal = true;
-				}
-				break;
-
-				case static_cast<std::uint8_t>(AttributeName::Justification):
-				{
-					returnedAttributeData = justificationBitfield;
-					retVal = true;
-				}
-				break;
-
-				default:
-				{
-					// Do nothing, return false
-				}
-				break;
+				auto temp = reinterpret_cast<const std::uint32_t *>(&offset);
+				returnedAttributeData = *temp;
+				retVal = true;
 			}
+			break;
+
+			case static_cast<std::uint8_t>(AttributeName::Scale):
+			{
+				auto temp = reinterpret_cast<const std::uint32_t *>(&scale);
+				returnedAttributeData = *temp;
+				retVal = true;
+			}
+			break;
+
+			case static_cast<std::uint8_t>(AttributeName::NumberOfDecimals):
+			{
+				returnedAttributeData = get_number_of_decimals();
+				retVal = true;
+			}
+			break;
+
+			case static_cast<std::uint8_t>(AttributeName::Format):
+			{
+				returnedAttributeData = get_format();
+				retVal = true;
+			}
+			break;
+
+			case static_cast<std::uint8_t>(AttributeName::Justification):
+			{
+				returnedAttributeData = justificationBitfield;
+				retVal = true;
+			}
+			break;
+
+			default:
+			{
+				// Do nothing, return false
+			}
+			break;
 		}
+
 		return retVal;
-	}
-
-	bool OutputNumber::get_option(Options option) const
-	{
-		return (0 != ((1 << static_cast<std::uint8_t>(option)) & optionsBitfield));
-	}
-
-	void OutputNumber::set_options(std::uint8_t value)
-	{
-		optionsBitfield = value;
-	}
-
-	void OutputNumber::set_option(Options option, bool value)
-	{
-		if (value)
-		{
-			optionsBitfield |= (1 << static_cast<std::uint8_t>(option));
-		}
-		else
-		{
-			optionsBitfield &= ~(1 << static_cast<std::uint8_t>(option));
-		}
-	}
-
-	OutputNumber::HorizontalJustification OutputNumber::get_horizontal_justification() const
-	{
-		return static_cast<HorizontalJustification>(justificationBitfield & 0x03);
-	}
-
-	OutputNumber::VerticalJustification OutputNumber::get_vertical_justification() const
-	{
-		return static_cast<VerticalJustification>((justificationBitfield >> 2) & 0x03);
-	}
-
-	void OutputNumber::set_justification_bitfield(std::uint8_t value)
-	{
-		justificationBitfield = value;
-	}
-
-	float OutputNumber::get_scale() const
-	{
-		return scale;
-	}
-
-	void OutputNumber::set_scale(float scaleValue)
-	{
-		scale = scaleValue;
-	}
-
-	std::int32_t OutputNumber::get_offset() const
-	{
-		return offset;
-	}
-
-	void OutputNumber::set_offset(std::int32_t offsetValue)
-	{
-		offset = offsetValue;
-	}
-
-	std::uint8_t OutputNumber::get_number_of_decimals() const
-	{
-		return numberOfDecimals;
-	}
-
-	void OutputNumber::set_number_of_decimals(std::uint8_t decimalValue)
-	{
-		numberOfDecimals = decimalValue;
-	}
-
-	bool OutputNumber::get_format() const
-	{
-		return format;
-	}
-
-	void OutputNumber::set_format(bool shouldFormatAsExponential)
-	{
-		format = shouldFormatAsExponential;
-	}
-
-	std::uint32_t OutputNumber::get_value() const
-	{
-		return value;
-	}
-
-	void OutputNumber::set_value(std::uint32_t inputValue)
-	{
-		value = inputValue;
-	}
-
-	void OutputNumber::set_variable_reference(std::uint16_t referencedObjectID)
-	{
-		variableReference = referencedObjectID;
-	}
-
-	std::uint16_t OutputNumber::get_variable_reference() const
-	{
-		return variableReference;
-	}
-
-	std::uint16_t OutputNumber::get_font_attributes() const
-	{
-		return fontAttributes;
-	}
-
-	void OutputNumber::set_font_attributes(std::uint16_t fontAttributesValue)
-	{
-		fontAttributes = fontAttributesValue;
 	}
 
 	VirtualTerminalObjectType OutputList::get_object_type() const
@@ -3997,16 +3502,6 @@ namespace isobus
 			retVal = true;
 		}
 		return retVal;
-	}
-
-	void OutputList::set_variable_reference(std::uint16_t referencedObjectID)
-	{
-		variableReference = referencedObjectID;
-	}
-
-	std::uint16_t OutputList::get_variable_reference() const
-	{
-		return variableReference;
 	}
 
 	VirtualTerminalObjectType OutputLine::get_object_type() const
@@ -5375,12 +4870,12 @@ namespace isobus
 		endAngle = value;
 	}
 
-	std::uint16_t OutputMeter::get_variable_reference() const
+	std::uint16_t VariableReferenceableVTObject::get_variable_reference() const
 	{
 		return variableReference;
 	}
 
-	void OutputMeter::set_variable_reference(std::uint16_t variableReferenceValue)
+	void VariableReferenceableVTObject::set_variable_reference(std::uint16_t variableReferenceValue)
 	{
 		variableReference = variableReferenceValue;
 	}
@@ -5775,16 +5270,6 @@ namespace isobus
 		{
 			optionsBitfield &= ~(1 << static_cast<std::uint8_t>(option));
 		}
-	}
-
-	std::uint16_t OutputLinearBarGraph::get_variable_reference() const
-	{
-		return variableReference;
-	}
-
-	void OutputLinearBarGraph::set_variable_reference(std::uint16_t variableReferenceValue)
-	{
-		variableReference = variableReferenceValue;
 	}
 
 	VirtualTerminalObjectType OutputArchedBarGraph::get_object_type() const
@@ -6211,16 +5696,6 @@ namespace isobus
 	void OutputArchedBarGraph::set_target_value_reference(std::uint16_t value)
 	{
 		targetValueReference = value;
-	}
-
-	std::uint16_t OutputArchedBarGraph::get_variable_reference() const
-	{
-		return variableReference;
-	}
-
-	void OutputArchedBarGraph::set_variable_reference(std::uint16_t variableReferenceValue)
-	{
-		variableReference = variableReferenceValue;
 	}
 
 	VirtualTerminalObjectType PictureGraphic::get_object_type() const
