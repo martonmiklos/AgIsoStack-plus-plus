@@ -127,6 +127,18 @@ namespace isobus
 		return workingSetDeletionRequested;
 	}
 
+	void VirtualTerminalServerManagedWorkingSet::set_iop_size(std::uint32_t newIopSize)
+	{
+		const std::lock_guard<std::mutex> lock(managedWorkingSetMutex);
+		objectPoolTransferInProgress = true;
+		iopSize = newIopSize;
+	}
+
+	float VirtualTerminalServerManagedWorkingSet::iop_load_percentage() const
+	{
+		return (transferredIopSize / (float)iopSize) * 100.0f;
+	}
+
 	void VirtualTerminalServerManagedWorkingSet::set_object_pool_processing_state(ObjectPoolProcessingThreadState value)
 	{
 		const std::lock_guard<std::mutex> lock(managedWorkingSetMutex);
@@ -168,6 +180,11 @@ namespace isobus
 			CANStackLogger::error("[WS]: Object pool failed to be parsed.");
 			set_object_pool_processing_state(ObjectPoolProcessingThreadState::Fail);
 		}
+	}
+
+	bool VirtualTerminalServerManagedWorkingSet::is_object_pool_transfer_in_progress() const
+	{
+		return objectPoolTransferInProgress;
 	}
 
 } // namespace isobus
