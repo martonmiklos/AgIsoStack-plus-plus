@@ -139,7 +139,7 @@ namespace isobus
 
 		/// @brief This function is called when the interface needs to know the number of y pixels (height) of your soft keys
 		/// @returns The number of y pixels (height) of your soft keys
-		virtual std::uint8_t get_soft_key_descriptor_y_pixel_width() const = 0;
+		virtual std::uint8_t get_soft_key_descriptor_y_pixel_height() const = 0;
 
 		/// @brief This function is called when the interface needs to know the number of possible virtual soft keys in your soft key mask render area
 		/// @returns The number of possible virtual soft keys in your soft key mask render area
@@ -673,6 +673,7 @@ namespace isobus
 		LanguageCommandInterface languageCommandInterface; ///< The language command interface for the server
 		std::shared_ptr<InternalControlFunction> serverInternalControlFunction; ///< The internal control function for the server
 		std::vector<std::shared_ptr<VirtualTerminalServerManagedWorkingSet>> managedWorkingSetList; ///< The list of managed working sets
+		std::map<std::shared_ptr<VirtualTerminalServerManagedWorkingSet>, bool> managedWorkingSetIopLoadStateMap;
 		std::shared_ptr<VirtualTerminalServerManagedWorkingSet> activeWorkingSet; ///< The active working set
 		std::uint32_t statusMessageTimestamp_ms = 0; ///< The timestamp of the last status message sent
 		std::uint16_t activeWorkingSetDataMaskObjectID = NULL_OBJECT_ID; ///< The object ID of the active working set's data mask
