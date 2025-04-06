@@ -9,8 +9,11 @@ if(NOT CAN_DRIVER)
     set(CAN_DRIVER "WindowsPCANBasic")
   elseif(APPLE)
     set(CAN_DRIVER "MacCANPCAN")
+  elseif(ANDROID)
+    set(CAN_DRIVER "gs_can_libusb")
   else()
     set(CAN_DRIVER "SocketCAN")
+    list(APPEND CAN_DRIVER "gs_can_libusb")
   endif()
 
   message(
@@ -103,6 +106,10 @@ endif()
 if("NTCAN" IN_LIST CAN_DRIVER)
   list(APPEND HARDWARE_INTEGRATION_SRC "ntcan_plugin.cpp")
   list(APPEND HARDWARE_INTEGRATION_INCLUDE "ntcan_plugin.hpp")
+endif()
+if("gs_can_libusb" IN_LIST CAN_DRIVER)
+  list(APPEND HARDWARE_INTEGRATION_SRC "gs_can_libusb.cpp")
+  list(APPEND HARDWARE_INTEGRATION_INCLUDE "gs_can_libusb.hpp")
 endif()
 
 # Prepend the source directory path to all the source files
@@ -349,6 +356,49 @@ if("NTCAN" IN_LIST CAN_DRIVER)
       FATAL_ERROR
         "NTCAN Selected but no supported OS was detected. Only Windows is supported currently."
     )
+  endif()
+endif()
+
+if("gs_can_libusb" IN_LIST CAN_DRIVER)
+  if (ANDROID)
+    include(FetchContent)
+    FetchContent_Declare(
+            libusb
+            GIT_REPOSITORY https://github.com/libusb/libusb-cmake
+            GIT_TAG        v1.0.29-0
+    )
+    set(LIBUSB_BUILD_EXAMPLES OFF CACHE INTERNAL "")
+    set(LIBUSB_BUILD_TESTS OFF CACHE INTERNAL "")
+    set(LIBUSB_ENABLE_LOGGING OFF CACHE INTERNAL "")
+    set(LIBUSB_BUILD_DOCS OFF CACHE INTERNAL "")
+    set(LIBUSB_USE_SYSTEM_LIBRARIES OFF CACHE INTERNAL "")
+    FetchContent_MakeAvailable(libusb)
+
+    message(AUTHOR_WARNING "Stack: Linking statically to libusb (via FetchContent) for Android.")
+    get_target_property(_ifaces HardwareIntegration INTERFACE_LINK_LIBRARIES)
+    message(STATUS "HardwareIntegration INTERFACE_LINK_LIBRARIES = ${_ifaces}")
+    target_link_libraries(HardwareIntegration PRIVATE $<BUILD_INTERFACE:usb-1.0)
+    target_include_directories(${BINARY_NAME} PRIVATE ${libusb_SOURCE_DIR}/libusb)
+    target_include_directories(${BINARY_NAME} PRIVATE ${libusb_SOURCE_DIR})
+    target_include_directories(HardwareIntegration PRIVATE ${libusb_SOURCE_DIR}/libusb)
+    target_include_directories(HardwareIntegration PRIVATE ${libusb_SOURCE_DIR})
+    add_dependencies(${BINARY_NAME} usb-1.0)
+
+    if(TARGET usb-1.0)
+      install(
+        TARGETS usb-1.0
+        EXPORT  isobusTargets
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        INCLUDES DESTINATION include
+      )
+      install(
+        DIRECTORY ${libusb_SOURCE_DIR}/libusb/
+        DESTINATION include/libusb
+        FILES_MATCHING PATTERN "*.h"
+      )
+    endif()
   endif()
 endif()
 
