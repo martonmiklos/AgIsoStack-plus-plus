@@ -375,30 +375,17 @@ if("gs_can_libusb" IN_LIST CAN_DRIVER)
     FetchContent_MakeAvailable(libusb)
 
     message(AUTHOR_WARNING "Stack: Linking statically to libusb (via FetchContent) for Android.")
-    get_target_property(_ifaces HardwareIntegration INTERFACE_LINK_LIBRARIES)
-    message(STATUS "HardwareIntegration INTERFACE_LINK_LIBRARIES = ${_ifaces}")
-    target_link_libraries(HardwareIntegration PRIVATE $<BUILD_INTERFACE:usb-1.0)
-    target_include_directories(${BINARY_NAME} PRIVATE ${libusb_SOURCE_DIR}/libusb)
-    target_include_directories(${BINARY_NAME} PRIVATE ${libusb_SOURCE_DIR})
-    target_include_directories(HardwareIntegration PRIVATE ${libusb_SOURCE_DIR}/libusb)
-    target_include_directories(HardwareIntegration PRIVATE ${libusb_SOURCE_DIR})
-    add_dependencies(${BINARY_NAME} usb-1.0)
-
-    if(TARGET usb-1.0)
-      install(
-        TARGETS usb-1.0
-        EXPORT  isobusTargets
-        RUNTIME DESTINATION bin
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        INCLUDES DESTINATION include
-      )
-      install(
-        DIRECTORY ${libusb_SOURCE_DIR}/libusb/
-        DESTINATION include/libusb
-        FILES_MATCHING PATTERN "*.h"
-      )
-    endif()
+    add_dependencies(HardwareIntegration usb-1.0)
+    target_link_libraries(HardwareIntegration
+            PRIVATE
+            $<BUILD_INTERFACE:usb-1.0>
+    )
+    target_include_directories(HardwareIntegration BEFORE PUBLIC
+            $<BUILD_INTERFACE:${libusb_SOURCE_DIR}/libusb>
+    )
+    get_target_property(_inc HardwareIntegration INCLUDE_DIRECTORIES)
+    message(AUTHOR_WARNING "HardwareIntegration include dirs: ${_inc}")
+    message(AUTHOR_WARNING "libusb source dir: ${libusb_SOURCE_DIR}")
   endif()
 endif()
 

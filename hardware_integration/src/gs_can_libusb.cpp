@@ -24,10 +24,25 @@
 
 namespace isobus
 {
+#if defined(ANDROID)
+    GS_CAN_Interface::GS_CAN_Interface()
+    {
+        //TODlibusb_set_option(&ctx, LIBUSB_OPTION_NO_DEVICE_DISCOVERY, NULL);
+        if (libusb_init(&ctx) < 0)
+        {
+            LOG_CRITICAL("Failed to initialize libusb");
+        }
+    }
+#else
 	GS_CAN_Interface::GS_CAN_Interface(const std::string serial) :
 	  target_serial(serial)
 	{
+        if (libusb_init(&ctx) < 0)
+        {
+            LOG_CRITICAL("Failed to initialize libusb");
+        }
 	}
+#endif
 
 	GS_CAN_Interface::~GS_CAN_Interface()
 	{
@@ -37,11 +52,6 @@ namespace isobus
 	bool GS_CAN_Interface::get_is_valid() const
 	{
 		return handle != nullptr;
-	}
-
-	std::string GS_CAN_Interface::get_device_serial() const
-	{
-		return opened_serial;
 	}
 
 	void GS_CAN_Interface::close()
@@ -56,15 +66,11 @@ namespace isobus
 
 	void GS_CAN_Interface::open()
 	{
-		libusb_context *ctx = nullptr;
+#if defined(ANDROID)
+        //TODOlibusb_wrap_sys_device(NULL, (intptr_t)file_descriptor, &handle);
+#else
 		libusb_device **devs = nullptr;
 		ssize_t cnt;
-
-		if (libusb_init(&ctx) < 0)
-		{
-			LOG_CRITICAL("Failed to initialize libusb");
-			return;
-		}
 
 		cnt = libusb_get_device_list(ctx, &devs);
 		if (cnt < 0)
@@ -129,10 +135,14 @@ namespace isobus
 		}
 
 		libusb_free_device_list(devs, 1);
-
+#endif
 		if (!handle)
 		{
+#ifdef ANDROID
+            LOG_ERROR("Unable to open gs_usb device");
+#else
 			LOG_ERROR("No matching gs_usb device found with serial: " + target_serial);
+#endif
 			libusb_exit(ctx);
 		}
 		else
@@ -286,7 +296,13 @@ namespace isobus
 		return true;
 	}
 
-	bool GS_CAN_Interface::set_serial(const std::string &serial)
+#if defined(ANDROID)
+    void GS_CAN_Interface::set_file_descriptor(int descriptor)
+    {
+        file_descriptor = descriptor;
+    }
+#else
+    bool GS_CAN_Interface::set_serial(const std::string &serial)
 	{
 		bool retVal = false;
 
@@ -297,6 +313,7 @@ namespace isobus
 		}
 		return retVal;
 	}
+#endif
 
 	bool GS_CAN_Interface::start()
 	{

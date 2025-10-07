@@ -1,7 +1,7 @@
 //================================================================================================
 /// @file gs_can_libusb.cpp
 ///
-/// @brief An userspace (libusb based) driver for gs_usb compatible devices
+/// @brief An userspace (libusb based) driver for gs_usb (Geschwister Schneider USB-CAN) compatible devices
 /// @author Miklos Marton
 ///
 /// @copyright 2025 The Open-Agriculture Developers
@@ -13,7 +13,11 @@
 #include "isobus/hardware_integration/can_hardware_plugin.hpp"
 #include "isobus/isobus/can_message_frame.hpp"
 
-#include "libusb.h"
+#if ANDROID
+#include <libusb/libusb.h>
+#else
+#include <libusb-1.0/libusb.h>
+#endif
 #include <string>
 
 #define GSUSB_VID 0x1d50
@@ -33,20 +37,20 @@ namespace isobus
 	class GS_CAN_Interface : public CANHardwarePlugin
 	{
 	public:
-		/// @brief Constructor for the socket CAN driver
+#if defined(ANDROID)
+        /// @brief Constructor for the GS USB CAN driver
+        explicit GS_CAN_Interface();
+#else
+        /// @brief Constructor for the GS USB CAN driver
 		/// @param[in] serial The device serial number, if blank the first enumerated device will be opened
 		explicit GS_CAN_Interface(const std::string serial = "");
-
+#endif
 		/// @brief The destructor for GS_CAN_Interface
 		virtual ~GS_CAN_Interface();
 
 		/// @brief Returns if the socket connection is valid
 		/// @returns `true` if connected, `false` if not connected
 		bool get_is_valid() const override;
-
-		/// @brief Returns the serial number of the used device
-		/// @returns The device serial number what the device is using
-		std::string get_device_serial() const;
 
 		/// @brief Closes the socket
 		void close() override;
@@ -64,11 +68,17 @@ namespace isobus
 		/// @returns `true` if the frame was written, otherwise `false`
 		bool write_frame(const isobus::CANMessageFrame &canFrame) override;
 
+#if defined(ANDROID)
+        /// @brief Set the file descriptor of the CAN interface to be opened.
+        /// It is mandatory to call this function before calling open
+        /// @param[in] descriptor file descriptor acquired from JAVA via the UsbDevice.getFileDescriptor()
+        void set_file_descriptor(int descriptor);
+#else
 		/// @brief Set the serial number of the target adapter, which only works if the device is not open
 		/// @param[in] serial The serial number of the adapter to be opened. If blank the first enumerated device will be opened
 		/// @returns `true` if the target serial was changed, otherwise `false` (if the device is open this will return false)
 		bool set_serial(const std::string &serial);
-
+#endif
 	private:
 		/* Device specific constants */
 		enum gs_usb_breq
@@ -161,8 +171,13 @@ namespace isobus
 		bool reset();
 		bool setBaudRate();
 		int findEndPoints();
-		std::string target_serial, opened_serial;
-		uint8_t ep_in, ep_out;
+        libusb_context *ctx = nullptr;
 		libusb_device_handle *handle = nullptr;
+        uint8_t ep_in, ep_out;
+#if defined(ANDROID)
+        int file_descriptor = 0;
+#else
+        std::string target_serial, opened_serial;
+#endif
 	};
 }
