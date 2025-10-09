@@ -176,6 +176,7 @@ namespace isobus
         uint8_t ep_in, ep_out;
 #if defined(ANDROID)
         int file_descriptor = 0;
+        bool openedWithoutFd = false;
 #else
         std::string target_serial, opened_serial;
 #endif

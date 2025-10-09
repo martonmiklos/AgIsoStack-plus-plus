@@ -27,7 +27,7 @@ namespace isobus
 #if defined(ANDROID)
     GS_CAN_Interface::GS_CAN_Interface()
     {
-        //TODlibusb_set_option(&ctx, LIBUSB_OPTION_NO_DEVICE_DISCOVERY, NULL);
+        libusb_set_option(ctx, LIBUSB_OPTION_NO_DEVICE_DISCOVERY, NULL);
         if (libusb_init(&ctx) < 0)
         {
             LOG_CRITICAL("Failed to initialize libusb");
@@ -62,12 +62,17 @@ namespace isobus
 			libusb_close(handle);
 			handle = nullptr;
 		}
+        openedWithoutFd = false;
 	}
 
 	void GS_CAN_Interface::open()
 	{
 #if defined(ANDROID)
-        //TODOlibusb_wrap_sys_device(NULL, (intptr_t)file_descriptor, &handle);
+        if (file_descriptor == 0) {
+            openedWithoutFd = true;
+        } else {
+            libusb_wrap_sys_device(NULL, (intptr_t) file_descriptor, &handle);
+        }
 #else
 		libusb_device **devs = nullptr;
 		ssize_t cnt;
@@ -300,6 +305,10 @@ namespace isobus
     void GS_CAN_Interface::set_file_descriptor(int descriptor)
     {
         file_descriptor = descriptor;
+        if (openedWithoutFd) {
+            open();
+            openedWithoutFd = false;
+        }
     }
 #else
     bool GS_CAN_Interface::set_serial(const std::string &serial)
