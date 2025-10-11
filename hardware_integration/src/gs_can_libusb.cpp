@@ -38,10 +38,10 @@ namespace isobus
 	GS_CAN_Interface::GS_CAN_Interface(const std::string serial) :
 	  target_serial(serial)
 	{
-        if (libusb_init(&ctx) < 0)
-        {
-            LOG_CRITICAL("Failed to initialize libusb");
-        }
+    if (libusb_init(&ctx) < 0)
+    {
+      LOG_CRITICAL("Failed to initialize libusb");
+    }
 	}
 #endif
 
@@ -49,6 +49,11 @@ namespace isobus
 	{
 		close();
 	}
+
+  std::string GS_CAN_Interface::get_name() const
+  {
+    return "GS CAN libusb";
+  }
 
 	bool GS_CAN_Interface::get_is_valid() const
 	{
@@ -63,7 +68,9 @@ namespace isobus
 			libusb_close(handle);
 			handle = nullptr;
 		}
-        openedWithoutFd = false;
+#if defined(ANDROID)
+    openedWithoutFd = false;
+#endif
 	}
 
 	void GS_CAN_Interface::open()

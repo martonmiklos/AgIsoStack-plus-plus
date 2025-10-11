@@ -386,6 +386,11 @@ if("gs_can_libusb" IN_LIST CAN_DRIVER)
     get_target_property(_inc HardwareIntegration INCLUDE_DIRECTORIES)
     message(AUTHOR_WARNING "HardwareIntegration include dirs: ${_inc}")
     message(AUTHOR_WARNING "libusb source dir: ${libusb_SOURCE_DIR}")
+  else()
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(LIBUSB REQUIRED IMPORTED_TARGET libusb-1.0)
+
+    target_link_libraries(HardwareIntegration PRIVATE PkgConfig::LIBUSB)
   endif()
 endif()
 

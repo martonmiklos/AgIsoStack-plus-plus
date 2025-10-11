@@ -38,8 +38,8 @@ namespace isobus
 	{
 	public:
 #if defined(ANDROID)
-        /// @brief Constructor for the GS USB CAN driver
-        explicit GS_CAN_Interface();
+    /// @brief Constructor for the GS USB CAN driver
+    explicit GS_CAN_Interface();
 #else
         /// @brief Constructor for the GS USB CAN driver
 		/// @param[in] serial The device serial number, if blank the first enumerated device will be opened
@@ -47,6 +47,10 @@ namespace isobus
 #endif
 		/// @brief The destructor for GS_CAN_Interface
 		virtual ~GS_CAN_Interface();
+
+    /// @brief Returns with the name of the plugin in a format which is suitable to be displayed
+    /// @returns GS CAN libusb
+    virtual std::string get_name() const override;
 
 		/// @brief Returns if the socket connection is valid
 		/// @returns `true` if connected, `false` if not connected
