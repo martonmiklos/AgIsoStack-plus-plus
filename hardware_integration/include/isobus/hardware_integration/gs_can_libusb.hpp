@@ -175,7 +175,7 @@ namespace isobus
 		libusb_device_handle *handle = nullptr;
         uint8_t ep_in, ep_out;
 #if defined(ANDROID)
-        int file_descriptor = 0;
+        intptr_t file_descriptor = 0;
         bool openedWithoutFd = false;
 #else
         std::string target_serial, opened_serial;

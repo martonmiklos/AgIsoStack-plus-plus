@@ -27,6 +27,7 @@ namespace isobus
 #if defined(ANDROID)
     GS_CAN_Interface::GS_CAN_Interface()
     {
+        libusb_set_option(nullptr, LIBUSB_OPTION_LOG_LEVEL, 4);
         libusb_set_option(ctx, LIBUSB_OPTION_NO_DEVICE_DISCOVERY, NULL);
         if (libusb_init(&ctx) < 0)
         {
@@ -304,7 +305,7 @@ namespace isobus
 #if defined(ANDROID)
     void GS_CAN_Interface::set_file_descriptor(int descriptor)
     {
-        file_descriptor = descriptor;
+        file_descriptor = (intptr_t)descriptor;
         if (openedWithoutFd) {
             open();
             openedWithoutFd = false;
