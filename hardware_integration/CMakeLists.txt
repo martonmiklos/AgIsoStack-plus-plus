@@ -335,7 +335,8 @@ if("WindowsCandleDLL" IN_LIST CAN_DRIVER)
         "${CANDLE_DLL_DOWNLOAD_DIR}/candle_release_latest.json")
     file(
       DOWNLOAD "${CANDLE_DLL_RELEASE_API}" "${CANDLE_DLL_RELEASE_JSON}"
-      STATUS CANDLE_DLL_RELEASE_STATUS TLS_VERIFY ON)
+      STATUS CANDLE_DLL_RELEASE_STATUS TLS_VERIFY ON
+      HTTPHEADER "User-Agent: AgIsoStack-plus-plus-CMake")
     list(GET CANDLE_DLL_RELEASE_STATUS 0 CANDLE_DLL_RELEASE_STATUS_CODE)
     if(NOT CANDLE_DLL_RELEASE_STATUS_CODE EQUAL 0)
       message(
@@ -344,9 +345,31 @@ if("WindowsCandleDLL" IN_LIST CAN_DRIVER)
     else()
       file(READ "${CANDLE_DLL_RELEASE_JSON}" CANDLE_DLL_RELEASE_JSON_TEXT)
 
-      string(REGEX MATCHALL
-                   "https://[^\"[:space:]]*/releases/download/[^\"[:space:]]*"
-                   CANDLE_DLL_RELEASE_URLS "${CANDLE_DLL_RELEASE_JSON_TEXT}")
+      # Extract browser_download_url entries first (best source for direct asset download).
+      string(
+        REGEX MATCHALL
+              "\"browser_download_url\"[ \t\r\n]*:[ \t\r\n]*\"[^\"]+\""
+              CANDLE_DLL_BROWSER_URL_FIELDS "${CANDLE_DLL_RELEASE_JSON_TEXT}")
+
+      set(CANDLE_DLL_RELEASE_URLS "")
+      foreach(CANDLE_DLL_BROWSER_URL_FIELD ${CANDLE_DLL_BROWSER_URL_FIELDS})
+        string(
+          REGEX REPLACE
+                "^.*\"browser_download_url\"[ \t\r\n]*:[ \t\r\n]*\"([^\"]+)\".*$"
+                "\\1" CANDLE_DLL_BROWSER_URL
+                "${CANDLE_DLL_BROWSER_URL_FIELD}")
+        string(REPLACE "\\/" "/" CANDLE_DLL_BROWSER_URL
+                       "${CANDLE_DLL_BROWSER_URL}")
+        list(APPEND CANDLE_DLL_RELEASE_URLS "${CANDLE_DLL_BROWSER_URL}")
+      endforeach()
+
+      # Backward-compatible fallback in case browser_download_url is missing.
+      if(NOT CANDLE_DLL_RELEASE_URLS)
+        string(
+          REGEX MATCHALL
+                "https://[^\"[:space:]]*/releases/download/[^\"[:space:]]*"
+                CANDLE_DLL_RELEASE_URLS "${CANDLE_DLL_RELEASE_JSON_TEXT}")
+      endif()
 
       set(CANDLE_DLL_SELECTED_ASSET_URL "")
       if(MSVC)
@@ -387,7 +410,8 @@ if("WindowsCandleDLL" IN_LIST CAN_DRIVER)
         file(
           DOWNLOAD "${CANDLE_DLL_SELECTED_ASSET_URL}"
           "${CANDLE_DLL_ASSET_PATH}" STATUS CANDLE_DLL_ASSET_DOWNLOAD_STATUS
-          TLS_VERIFY ON)
+          TLS_VERIFY ON HTTPHEADER
+          "User-Agent: AgIsoStack-plus-plus-CMake")
         list(GET CANDLE_DLL_ASSET_DOWNLOAD_STATUS 0
              CANDLE_DLL_ASSET_DOWNLOAD_STATUS_CODE)
         if(NOT CANDLE_DLL_ASSET_DOWNLOAD_STATUS_CODE EQUAL 0)
