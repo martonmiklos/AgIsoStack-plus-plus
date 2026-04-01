@@ -50,4 +50,8 @@
 #include "isobus/hardware_integration/ntcan_plugin.hpp"
 #endif
 
+#ifdef ISOBUS_WINDOWSCANDLEDLL_AVAILABLE
+#include "isobus/hardware_integration/candle_windows_plugin.hpp"
+#endif
+
 #endif // AVAILABLE_CAN_DRIVERS_HPP
