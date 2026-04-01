@@ -108,6 +108,10 @@ if("SILKit" IN_LIST CAN_DRIVER)
   list(APPEND HARDWARE_INTEGRATION_SRC "sil_kit_plugin.cpp")
   list(APPEND HARDWARE_INTEGRATION_INCLUDE "sil_kit_plugin.hpp")
 endif()
+if("WindowsCandleDLL" IN_LIST CAN_DRIVER)
+  list(APPEND HARDWARE_INTEGRATION_SRC "candle_windows_plugin.cpp")
+  list(APPEND HARDWARE_INTEGRATION_INCLUDE "candle_windows_plugin.hpp")
+endif()
 
 # Prepend the source directory path to all the source files
 prepend(HARDWARE_INTEGRATION_SRC ${HARDWARE_INTEGRATION_SRC_DIR}
@@ -315,6 +319,153 @@ if("SYS_TEC" IN_LIST CAN_DRIVER)
     )
   endif()
 endif()
+if("WindowsCandleDLL" IN_LIST CAN_DRIVER)
+  if(WIN32)
+    message(
+      AUTHOR_WARNING
+        "
+      The WindowsCandleDLL driver requires candle.dll to be available next to your executable,
+      or in a location discoverable by LoadLibrary. Source: https://github.com/Andrei-Errapart/candle_dll
+      "
+    )
+
+    # Download the latest candle_dll release asset automatically.
+    # We intentionally parse the GitHub API JSON using regex to keep compatibility
+    # with CMake 3.16 (without string(JSON ...)).
+    set(CANDLE_DLL_RELEASE_API
+        "https://api.github.com/repos/Andrei-Errapart/candle_dll/releases/latest")
+    set(CANDLE_DLL_DOWNLOAD_DIR
+        "${CMAKE_CURRENT_BINARY_DIR}/candle_dll_release")
+    file(MAKE_DIRECTORY "${CANDLE_DLL_DOWNLOAD_DIR}")
+
+    set(CANDLE_DLL_RELEASE_JSON
+        "${CANDLE_DLL_DOWNLOAD_DIR}/candle_release_latest.json")
+    file(
+      DOWNLOAD "${CANDLE_DLL_RELEASE_API}" "${CANDLE_DLL_RELEASE_JSON}"
+      STATUS CANDLE_DLL_RELEASE_STATUS TLS_VERIFY ON
+      HTTPHEADER "User-Agent: AgIsoStack-plus-plus-CMake")
+    list(GET CANDLE_DLL_RELEASE_STATUS 0 CANDLE_DLL_RELEASE_STATUS_CODE)
+    if(NOT CANDLE_DLL_RELEASE_STATUS_CODE EQUAL 0)
+      message(
+        WARNING
+          "Failed to query candle_dll latest release metadata from GitHub API. Status: ${CANDLE_DLL_RELEASE_STATUS}.")
+    else()
+      file(READ "${CANDLE_DLL_RELEASE_JSON}" CANDLE_DLL_RELEASE_JSON_TEXT)
+
+      # Extract browser_download_url entries first (best source for direct asset download).
+      string(
+        REGEX MATCHALL
+              "\"browser_download_url\"[ \t\r\n]*:[ \t\r\n]*\"[^\"]+\""
+              CANDLE_DLL_BROWSER_URL_FIELDS "${CANDLE_DLL_RELEASE_JSON_TEXT}")
+
+      set(CANDLE_DLL_RELEASE_URLS "")
+      foreach(CANDLE_DLL_BROWSER_URL_FIELD ${CANDLE_DLL_BROWSER_URL_FIELDS})
+        string(
+          REGEX REPLACE
+                "^.*\"browser_download_url\"[ \t\r\n]*:[ \t\r\n]*\"([^\"]+)\".*$"
+                "\\1" CANDLE_DLL_BROWSER_URL
+                "${CANDLE_DLL_BROWSER_URL_FIELD}")
+        string(REPLACE "\\/" "/" CANDLE_DLL_BROWSER_URL
+                       "${CANDLE_DLL_BROWSER_URL}")
+        list(APPEND CANDLE_DLL_RELEASE_URLS "${CANDLE_DLL_BROWSER_URL}")
+      endforeach()
+
+      # Backward-compatible fallback in case browser_download_url is missing.
+      if(NOT CANDLE_DLL_RELEASE_URLS)
+        string(
+          REGEX MATCHALL
+                "https://[^\"[:space:]]*/releases/download/[^\"[:space:]]*"
+                CANDLE_DLL_RELEASE_URLS "${CANDLE_DLL_RELEASE_JSON_TEXT}")
+      endif()
+
+      set(CANDLE_DLL_SELECTED_ASSET_URL "")
+      if(MSVC)
+        # See https://gitlab.kitware.com/cmake/cmake/-/issues/15170
+        set(CMAKE_SYSTEM_PROCESSOR ${MSVC_CXX_ARCHITECTURE_ID})
+      endif()
+
+      foreach(CANDLE_DLL_ASSET_URL ${CANDLE_DLL_RELEASE_URLS})
+        if(CMAKE_SYSTEM_PROCESSOR STREQUAL "AMD64" OR CMAKE_SYSTEM_PROCESSOR
+                                                  STREQUAL "x64")
+          if(CANDLE_DLL_ASSET_URL MATCHES
+             "([Xx]64|[Aa][Mm][Dd]64).*(\\.zip|\\.7z|\\.dll)$")
+            set(CANDLE_DLL_SELECTED_ASSET_URL "${CANDLE_DLL_ASSET_URL}")
+            break()
+          endif()
+        elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64"
+               OR CMAKE_SYSTEM_PROCESSOR STREQUAL "X86")
+          if(CANDLE_DLL_ASSET_URL MATCHES
+             "([Xx]86|[Ii]386).*(\\.zip|\\.7z|\\.dll)$")
+            set(CANDLE_DLL_SELECTED_ASSET_URL "${CANDLE_DLL_ASSET_URL}")
+            break()
+          endif()
+        endif()
+      endforeach()
+
+      if(CANDLE_DLL_SELECTED_ASSET_URL STREQUAL "")
+        list(LENGTH CANDLE_DLL_RELEASE_URLS CANDLE_DLL_RELEASE_URL_COUNT)
+        if(CANDLE_DLL_RELEASE_URL_COUNT GREATER 0)
+          list(GET CANDLE_DLL_RELEASE_URLS 0 CANDLE_DLL_SELECTED_ASSET_URL)
+        endif()
+      endif()
+
+      if(NOT CANDLE_DLL_SELECTED_ASSET_URL STREQUAL "")
+        get_filename_component(CANDLE_DLL_ASSET_NAME
+                               "${CANDLE_DLL_SELECTED_ASSET_URL}" NAME)
+        set(CANDLE_DLL_ASSET_PATH
+            "${CANDLE_DLL_DOWNLOAD_DIR}/${CANDLE_DLL_ASSET_NAME}")
+        file(
+          DOWNLOAD "${CANDLE_DLL_SELECTED_ASSET_URL}"
+          "${CANDLE_DLL_ASSET_PATH}" STATUS CANDLE_DLL_ASSET_DOWNLOAD_STATUS
+          TLS_VERIFY ON HTTPHEADER
+          "User-Agent: AgIsoStack-plus-plus-CMake")
+        list(GET CANDLE_DLL_ASSET_DOWNLOAD_STATUS 0
+             CANDLE_DLL_ASSET_DOWNLOAD_STATUS_CODE)
+        if(NOT CANDLE_DLL_ASSET_DOWNLOAD_STATUS_CODE EQUAL 0)
+          message(
+            WARNING
+              "Failed to download candle_dll release asset: ${CANDLE_DLL_SELECTED_ASSET_URL}. Status: ${CANDLE_DLL_ASSET_DOWNLOAD_STATUS}")
+        else()
+          if(CANDLE_DLL_ASSET_PATH MATCHES "\\.zip$")
+            file(ARCHIVE_EXTRACT INPUT "${CANDLE_DLL_ASSET_PATH}"
+                 DESTINATION "${CANDLE_DLL_DOWNLOAD_DIR}")
+          endif()
+        endif()
+      else()
+        message(
+          WARNING
+            "Could not identify any downloadable assets in the latest candle_dll release metadata.")
+      endif()
+
+      file(
+        GLOB_RECURSE CANDLE_DLL_FILES
+        "${CANDLE_DLL_DOWNLOAD_DIR}/candle*.dll"
+        "${CANDLE_DLL_DOWNLOAD_DIR}/Candle*.dll")
+
+      if(CANDLE_DLL_FILES)
+        list(GET CANDLE_DLL_FILES 0 CANDLE_DLL_FILE)
+        add_custom_command(
+          TARGET HardwareIntegration
+          POST_BUILD
+          COMMAND
+            ${CMAKE_COMMAND} -E copy_if_different "${CANDLE_DLL_FILE}"
+            "$<TARGET_FILE_DIR:HardwareIntegration>/candle.dll"
+          COMMENT
+            "Copying downloaded candle.dll next to HardwareIntegration output")
+      else()
+        message(
+          WARNING
+            "No candle DLL binary found after download/extract. You may need to place candle.dll manually next to your executable.")
+      endif()
+    endif()
+  else()
+    message(
+      FATAL_ERROR
+        "WindowsCandleDLL Selected but no supported OS was detected. Only Windows is supported currently."
+    )
+  endif()
+endif()
+
 if("NTCAN" IN_LIST CAN_DRIVER)
   if(MSVC)
     # See https://gitlab.kitware.com/cmake/cmake/-/issues/15170
